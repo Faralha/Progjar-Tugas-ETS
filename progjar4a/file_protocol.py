@@ -23,9 +23,10 @@ class FileProtocol:
         self.file = FileInterface()
     def proses_string(self,string_datamasuk=''):
         logging.warning(f"string diproses: {string_datamasuk}")
-        c = shlex.split(string_datamasuk.lower())
+        c = shlex.split(string_datamasuk)
         try:
-            c_request = c[0].strip()
+            # Hanya ubah param pertama (command) menjadi lowercase
+            c_request = c[0].strip().lower()
             logging.warning(f"memproses request: {c_request}")
             params = [x for x in c[1:]]
             cl = getattr(self.file,c_request)(params)

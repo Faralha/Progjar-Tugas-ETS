@@ -17,15 +17,24 @@ class ProcessTheClient(threading.Thread):
         threading.Thread.__init__(self)
 
     def run(self):
+        buffer = b""
         while True:
-            data = self.connection.recv(32)
-            if data:
-                d = data.decode()
-                hasil = fp.proses_string(d)
-                hasil=hasil+"\r\n\r\n"
-                self.connection.sendall(hasil.encode())
-            else:
+            data = self.connection.recv(4096)
+            if not data:
                 break
+            buffer += data
+            # Cek dua kemungkinan delimiter
+            while b"\r\n\r\n" in buffer or b"\n\n" in buffer:
+                if b"\r\n\r\n" in buffer:
+                    delimiter = b"\r\n\r\n"
+                else:
+                    delimiter = b"\n\n"
+                parts = buffer.split(delimiter, 1)
+                d = parts[0].decode()
+                hasil = fp.proses_string(d)
+                hasil = hasil + "\r\n\r\n"
+                self.connection.sendall(hasil.encode())
+                buffer = parts[1]
         self.connection.close()
 
 

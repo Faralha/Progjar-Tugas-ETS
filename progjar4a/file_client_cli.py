@@ -10,6 +10,10 @@ def send_command(command_str=""):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(server_address)
     logging.warning(f"connecting to {server_address}")
+
+    # Command delimiter
+    if not command_str.endswith("\r\n\r\n"):
+        command_str += "\r\n\r\n"
     try:
         logging.warning(f"sending message ")
         sock.sendall(command_str.encode())
@@ -56,16 +60,37 @@ def remote_get(filename=""):
         namafile= hasil['data_namafile']
         isifile = base64.b64decode(hasil['data_file'])
         fp = open(namafile,'wb+')
-        fp.write(isifile)
+        #fp.write(isifile)
         fp.close()
         return True
     else:
         print("Gagal")
         return False
 
+def remote_upload(filepath=""):
+    filecontent = f"{convert_file(filepath)}"
+    command_str=f"UPLOAD {filepath} {filecontent}"
+    hasil = send_command(command_str)
+    if(hasil['status']=='OK'):
+        print(f"Berhasil Mengupload {filepath}")
+        return True
+    else:
+        print(f"Gagal Mengupload {filepath}")
+        return False
+
+def convert_file(filepath):
+    try:
+        with open(filepath, 'rb') as f:
+            encoded = base64.b64encode(f.read())
+            return encoded.decode("utf-8")
+    except Exception as e:
+        print(f"Gagal mengonversi file: {e}")
+        return False
+
 
 if __name__=='__main__':
-    server_address=('172.16.16.101',6666)
+    server_address=('0.0.0.0',6666)
     remote_list()
     remote_get('donalbebek.jpg')
-
+    remote_upload('PROTOKOL.txt')
+    print(f"{convert_file('PROTOKOL.txt')}")

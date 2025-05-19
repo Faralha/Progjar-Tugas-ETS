@@ -22,7 +22,23 @@ class FileInterface:
                 return None
             fp = open(f"{filename}",'rb')
             isifile = base64.b64encode(fp.read()).decode()
+            fp.close()
             return dict(status='OK',data_namafile=filename,data_file=isifile)
+        except Exception as e:
+            return dict(status='ERROR',data=str(e))
+
+    def upload(self,params=[]):
+        try:
+            filename = params[0]
+            filedata = params[1]
+            if (filename == ''):
+                return None
+            fp = open(f"{filename}",'wb')
+            isifile = base64.b64decode(filedata)
+            print(f"isi file: {filedata}")
+            fp.write(isifile)
+            fp.close()
+            return dict(status='OK')
         except Exception as e:
             return dict(status='ERROR',data=str(e))
 
