@@ -1,12 +1,14 @@
 import os
 import json
 import base64
+import threading
 from glob import glob
 
 
 class FileInterface:
     def __init__(self):
         os.chdir('files/')
+        self.lock = threading.Lock()
 
     def list(self,params=[]):
         try:
@@ -33,11 +35,10 @@ class FileInterface:
             filedata = params[1]
             if (filename == ''):
                 return None
-            fp = open(f"{filename}",'wb')
-            isifile = base64.b64decode(filedata)
-            print(f"isi file: {filedata}")
-            fp.write(isifile)
-            fp.close()
+            with self.lock:
+                fp = open(f"{filename}",'wb')
+                fp.write(base64.b64decode(filedata))
+                fp.close()
             return dict(status='OK')
         except Exception as e:
             return dict(status='ERROR',data=str(e))

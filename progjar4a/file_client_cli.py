@@ -2,6 +2,13 @@ import socket
 import json
 import base64
 import logging
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+
+# logging
+import csv
+import os 
+import time
+import threading
 
 server_address=('0.0.0.0',7777)
 
@@ -90,7 +97,14 @@ def convert_file(filepath):
 
 if __name__=='__main__':
     server_address=('0.0.0.0',6666)
-    remote_list()
-    remote_get('donalbebek.jpg')
-    remote_upload('PROTOKOL.txt')
-    print(f"{convert_file('PROTOKOL.txt')}")
+    
+    # remote_list()
+    # remote_get('donalbebek.jpg')
+    # remote_upload('PROTOKOL.txt')
+    # print(f"{convert_file('PROTOKOL.txt')}")
+    
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        executor.submit(remote_list)
+        executor.submit(remote_get, 'donalbebek.jpg')
+        executor.submit(remote_upload, 'PROTOKOL.txt')

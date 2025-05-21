@@ -4,6 +4,7 @@ import threading
 import logging
 import time
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 
 from file_protocol import  FileProtocol
@@ -50,18 +51,19 @@ class Server(threading.Thread):
         logging.warning(f"server berjalan di ip address {self.ipinfo}")
         self.my_socket.bind(self.ipinfo)
         self.my_socket.listen(1)
-        while True:
-            self.connection, self.client_address = self.my_socket.accept()
-            logging.warning(f"connection from {self.client_address}")
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            while True:
+                self.connection, self.client_address = self.my_socket.accept()
+                logging.warning(f"connection from {self.client_address}")
 
-            clt = ProcessTheClient(self.connection, self.client_address)
-            clt.start()
-            self.the_clients.append(clt)
+                executor.submit(ProcessTheClient(self.connection, self.client_address).run)
+                self.the_clients.append(self.connection)
 
 
 def main():
     svr = Server(ipaddress='0.0.0.0',port=6666)
     svr.start()
+    svr.join()
 
 
 if __name__ == "__main__":
