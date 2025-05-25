@@ -55,7 +55,7 @@ class Server:
             # Pass file descriptor to child process
             p = ProcessTheClient(conn.fileno(), client_address)
             p.start()
-            conn.close()  # Close in parent, child keeps its own copy
+            conn.close() 
 
 def main():
     svr = Server(ipaddress='0.0.0.0', port=6666)

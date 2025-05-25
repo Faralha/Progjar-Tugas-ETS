@@ -98,11 +98,11 @@ def convert_file(filepath):
 
 if __name__=='__main__':
     server_address=('0.0.0.0',6666)
-    client_workers = 1
+    client_workers = 50
     tasks = [
         ('list', None),
-        ('get', 'file_10mb-b.bin'),
-        ('upload', 'file_10mb-a.bin'),
+        ('get', 'file_100mb-b.bin'),
+        ('upload', 'file_100mb-a.bin'),
     ]
     sukses_get = 0
     gagal_get = 0

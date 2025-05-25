@@ -2,4 +2,4 @@
 venv/
 .idea/
 *.bin
-*.bin:Zone.indentifier
+*.bin:Zone.Identifier
