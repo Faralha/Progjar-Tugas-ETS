@@ -22,11 +22,13 @@ class FileInterface:
             filename = params[0]
             if (filename == ''):
                 return None
-            fp = open(f"{filename}",'rb')
-            isifile = base64.b64encode(fp.read()).decode()
-            fp.close()
+            with self.lock:
+                fp = open(f"{filename}",'rb')
+                isifile = base64.b64encode(fp.read()).decode()
+                fp.close()
             return dict(status='OK',data_namafile=filename,data_file=isifile)
         except Exception as e:
+            logging.warning(f"GET ERROR: {e}")
             return dict(status='ERROR',data=str(e))
 
     def upload(self,params=[]):
@@ -35,10 +37,11 @@ class FileInterface:
             filedata = params[1]
             if (filename == ''):
                 return None
-            with self.lock:
-                fp = open(f"{filename}",'wb')
-                fp.write(base64.b64decode(filedata))
-                fp.close()
+            # with self.lock:
+            print("Writing file:", filename)
+            fp = open(f"{filename}",'wb')
+            fp.write(base64.b64decode(filedata))
+            fp.close()
             return dict(status='OK')
         except Exception as e:
             return dict(status='ERROR',data=str(e))

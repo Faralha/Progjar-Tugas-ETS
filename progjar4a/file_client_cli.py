@@ -28,7 +28,7 @@ def send_command(command_str=""):
         data_received="" #empty string
         while True:
             #socket does not receive all data at once, data comes in part, need to be concatenated at the end of process
-            data = sock.recv(16)
+            data = sock.recv(4096)
             if data:
                 #data is not empty, concat with previous content
                 data_received += data.decode()
@@ -67,8 +67,9 @@ def remote_get(filename=""):
         namafile= hasil['data_namafile']
         isifile = base64.b64decode(hasil['data_file'])
         fp = open(namafile,'wb+')
-        #fp.write(isifile)
+        fp.write(isifile)
         fp.close()
+        print(f"Berhasil Mendapatkan {namafile}")
         return True
     else:
         print("Gagal")
@@ -97,14 +98,68 @@ def convert_file(filepath):
 
 if __name__=='__main__':
     server_address=('0.0.0.0',6666)
-    
-    # remote_list()
-    # remote_get('donalbebek.jpg')
-    # remote_upload('PROTOKOL.txt')
-    # print(f"{convert_file('PROTOKOL.txt')}")
-    
+    client_workers = 1
+    tasks = [
+        ('list', None),
+        ('get', 'file_10mb-b.bin'),
+        ('upload', 'file_10mb-a.bin'),
+    ]
+    sukses_get = 0
+    gagal_get = 0
+    sukses_upload = 0
+    gagal_upload = 0
+    bytes_get = 0
+    bytes_upload = 0
+    waktu_get = 0
+    waktu_upload = 0
 
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        executor.submit(remote_list)
-        executor.submit(remote_get, 'donalbebek.jpg')
-        executor.submit(remote_upload, 'PROTOKOL.txt')
+    start_time = time.time()
+    with ProcessPoolExecutor(max_workers=client_workers) as executor:
+        futures = []
+        waktu_mulai_get = waktu_mulai_upload = None
+        waktu_selesai_get = waktu_selesai_upload = None
+        for operasi, arg in tasks:
+            if operasi == 'list':
+                futures.append((operasi, arg, executor.submit(remote_list)))
+            elif operasi == 'get':
+                futures.append((operasi, arg, executor.submit(remote_get, arg)))
+            elif operasi == 'upload':
+                futures.append((operasi, arg, executor.submit(remote_upload, arg)))
+        
+        for operasi, arg, f in futures:
+            t0 = time.time()
+            result = f.result()
+            t1 = time.time()
+            if operasi == 'get':
+                if waktu_mulai_get is None:
+                    waktu_mulai_get = t0
+                waktu_selesai_get = t1
+                if result:
+                    sukses_get += 1
+                    if arg and os.path.exists(arg):
+                        bytes_get += os.path.getsize(arg)
+                else:
+                    gagal_get += 1
+            elif operasi == 'upload':
+                if waktu_mulai_upload is None:
+                    waktu_mulai_upload = t0
+                waktu_selesai_upload = t1
+                if result:
+                    sukses_upload += 1
+                    if arg and os.path.exists(arg):
+                        bytes_upload += os.path.getsize(arg)
+                else:
+                    gagal_upload += 1
+
+    waktu_get = (waktu_selesai_get - waktu_mulai_get) if waktu_mulai_get and waktu_selesai_get else 0
+    waktu_upload = (waktu_selesai_upload - waktu_mulai_upload) if waktu_mulai_upload and waktu_selesai_upload else 0
+    throughput_get = bytes_get / waktu_get if waktu_get > 0 else 0
+    throughput_upload = bytes_upload / waktu_upload if waktu_upload > 0 else 0
+
+    # Logging ke CSV
+    with open('client_log.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['operasi', 'waktu_total', 'throughput', 'sukses', 'gagal'])
+        writer.writerow(['get', waktu_get, throughput_get, sukses_get, gagal_get])
+        writer.writerow(['upload', waktu_upload, throughput_upload, sukses_upload, gagal_upload])
+    print(f"Log sesi client ditulis ke client_log.csv")
